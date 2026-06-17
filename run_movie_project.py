@@ -1,18 +1,26 @@
 """
-Movie rating prediction — model comparison project.
-Run with: py -3 run_movie_project.py
+Movie rating prediction - model comparison project.
+Run with: python run_movie_project.py
 Generates figures/ and prints comparison tables.
 """
 from __future__ import annotations
 
+import os
 import warnings
 from pathlib import Path
 
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "1")
+
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.metrics import silhouette_score
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
@@ -130,7 +138,7 @@ def classification_models() -> dict:
                         max_depth=12,
                         class_weight="balanced_subsample",
                         random_state=RANDOM_STATE,
-                        n_jobs=-1,
+                        n_jobs=1,
                     ),
                 ),
             ]
@@ -213,11 +221,12 @@ def plot_eda(df: pd.DataFrame) -> None:
     plt.close(fig)
 
 
-def plot_pca(df: pd.DataFrame, feature_cols: list[str]) -> None:
+def plot_pca(df: pd.DataFrame, feature_cols: list[str]) -> tuple[np.ndarray, np.ndarray, PCA]:
     matrix = df[feature_cols].dropna()
     labels = df.loc[matrix.index, "Vote_Average"]
     scaled = StandardScaler().fit_transform(matrix)
-    coords = PCA(n_components=2, random_state=RANDOM_STATE).fit_transform(scaled)
+    pca = PCA(n_components=2, random_state=RANDOM_STATE)
+    coords = pca.fit_transform(scaled)
 
     fig, ax = plt.subplots(figsize=(8, 6))
     sc = ax.scatter(coords[:, 0], coords[:, 1], c=labels, cmap="plasma", alpha=0.45, s=14)
@@ -228,6 +237,84 @@ def plot_pca(df: pd.DataFrame, feature_cols: list[str]) -> None:
     plt.tight_layout()
     fig.savefig(FIG_DIR / "02_pca_features.png", dpi=140)
     plt.close(fig)
+    return scaled, coords, pca
+
+
+def run_kmeans(
+    df: pd.DataFrame,
+    feature_cols: list[str],
+    scaled: np.ndarray,
+    coords: np.ndarray,
+    pca: PCA,
+) -> tuple[pd.DataFrame, pd.DataFrame, int]:
+    genre_cols = [c for c in feature_cols if c.startswith("genre_")]
+    k_range = range(3, 9)
+    metrics_rows = []
+    for k in k_range:
+        km = KMeans(n_clusters=k, random_state=RANDOM_STATE, n_init=10)
+        labels = km.fit_predict(scaled)
+        metrics_rows.append(
+            {"k": k, "inertia": km.inertia_, "silhouette": silhouette_score(scaled, labels)}
+        )
+    metrics = pd.DataFrame(metrics_rows)
+    best_k = int(metrics.loc[metrics["silhouette"].idxmax(), "k"])
+
+    kmeans = KMeans(n_clusters=best_k, random_state=RANDOM_STATE, n_init=10)
+    clustered = df.copy()
+    clustered["cluster"] = kmeans.fit_predict(scaled)
+
+    profiles = []
+    for label in sorted(clustered["cluster"].unique()):
+        subset = clustered[clustered["cluster"] == label]
+        top_genres = subset[genre_cols].mean().sort_values(ascending=False).head(3)
+        profiles.append(
+            {
+                "cluster": label,
+                "size": len(subset),
+                "mean_rating": subset["Vote_Average"].mean(),
+                "pct_high_rated": subset["High_Rated"].mean(),
+                "mean_log_votes": subset["log_vote_count"].mean(),
+                "top_genres": ", ".join(g.replace("genre_", "") for g in top_genres.index),
+            }
+        )
+    profile_df = pd.DataFrame(profiles).sort_values("mean_rating", ascending=False)
+
+    fig, axes = plt.subplots(1, 3, figsize=(16, 4.5))
+    axes[0].plot(metrics["k"], metrics["inertia"], marker="o", color="#4C72B0")
+    axes[0].set_xlabel("k")
+    axes[0].set_ylabel("Inertia")
+    axes[0].set_title("Elbow plot")
+
+    axes[1].plot(metrics["k"], metrics["silhouette"], marker="o", color="#55A868")
+    axes[1].axvline(best_k, color="crimson", ls="--", label=f"best k = {best_k}")
+    axes[1].set_xlabel("k")
+    axes[1].set_ylabel("Silhouette score")
+    axes[1].set_title("Silhouette vs k")
+    axes[1].legend()
+
+    palette = plt.cm.tab10(np.linspace(0, 1, best_k))
+    for label, color in zip(sorted(clustered["cluster"].unique()), palette):
+        mask = clustered["cluster"] == label
+        axes[2].scatter(
+            coords[mask, 0],
+            coords[mask, 1],
+            c=[color],
+            alpha=0.45,
+            s=12,
+            label=f"Cluster {label}",
+        )
+    axes[2].set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]:.1%})")
+    axes[2].set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]:.1%})")
+    axes[2].set_title(f"k-means clusters (k = {best_k}) on PCA projection")
+    axes[2].legend(markerscale=2, fontsize=8)
+
+    plt.tight_layout()
+    fig.savefig(FIG_DIR / "02b_kmeans_clustering.png", dpi=140)
+    plt.close(fig)
+
+    metrics.to_csv(DATA_DIR / "kmeans_metrics.csv", index=False)
+    profile_df.to_csv(DATA_DIR / "kmeans_cluster_profiles.csv", index=False)
+    return metrics, profile_df, best_k
 
 
 def compare_classifiers(X_train, X_test, y_train, y_test) -> pd.DataFrame:
@@ -236,7 +323,7 @@ def compare_classifiers(X_train, X_test, y_train, y_test) -> pd.DataFrame:
     fitted = {}
 
     for name, pipe in classification_models().items():
-        cv = cross_validate(pipe, X_train, y_train, cv=5, scoring=scoring, n_jobs=-1)
+        cv = cross_validate(pipe, X_train, y_train, cv=5, scoring=scoring, n_jobs=1)
         pipe.fit(X_train, y_train)
         proba = pipe.predict_proba(X_test)[:, 1]
         pred = pipe.predict(X_test)
@@ -273,13 +360,13 @@ def compare_classifiers(X_train, X_test, y_train, y_test) -> pd.DataFrame:
 
     best_name = results.iloc[0]["model"]
     RocCurveDisplay.from_predictions(y_test, fitted[best_name].predict_proba(X_test)[:, 1], ax=plt.subplots()[1])
-    plt.title(f"ROC curve — best model: {best_name}")
+    plt.title(f"ROC curve - best model: {best_name}")
     plt.tight_layout()
     plt.savefig(FIG_DIR / "04_roc_best_model.png", dpi=140)
     plt.close()
 
     ConfusionMatrixDisplay.from_predictions(y_test, fitted[best_name].predict(X_test))
-    plt.title(f"Confusion matrix — {best_name}")
+    plt.title(f"Confusion matrix - {best_name}")
     plt.tight_layout()
     plt.savefig(FIG_DIR / "05_confusion_best_model.png", dpi=140)
     plt.close()
@@ -306,7 +393,7 @@ def regularization_sweep(X_train, y_train, X_test, y_test) -> pd.DataFrame:
     ax.semilogx(sweep["C"], sweep["test_roc_auc"], marker="o")
     ax.set_xlabel("C (inverse regularization strength)")
     ax.set_ylabel("Test ROC-AUC")
-    ax.set_title("Tikhonov/L2 regularization effect — Logistic Regression")
+    ax.set_title("Tikhonov/L2 regularization effect - Logistic Regression")
     plt.tight_layout()
     fig.savefig(FIG_DIR / "06_regularization_sweep.png", dpi=140)
     plt.close(fig)
@@ -339,7 +426,16 @@ def main() -> None:
     print(f"CatBoost available: {HAS_CATBOOST}")
 
     plot_eda(model_df)
-    plot_pca(model_df, feature_cols)
+    scaled, coords, pca = plot_pca(model_df, feature_cols)
+
+    print("\n=== k-means clustering (course: clustering algorithms) ===")
+    kmeans_metrics, cluster_profiles, best_k = run_kmeans(
+        model_df, feature_cols, scaled, coords, pca
+    )
+    print(f"Selected k = {best_k}")
+    print(kmeans_metrics.round({"silhouette": 3}).to_string(index=False))
+    print()
+    print(cluster_profiles.round({"mean_rating": 2, "pct_high_rated": 3, "mean_log_votes": 2}).to_string(index=False))
 
     X = model_df[feature_cols]
     y_cls = model_df["High_Rated"]
