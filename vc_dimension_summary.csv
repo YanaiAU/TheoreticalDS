@@ -1,0 +1,5 @@
+hypothesis_class,vc_or_bound,kind,note
+Linear (Logistic Regression),24.0,exact VC dim,Hyperplanes in R^23
+SVM (RBF kernel),,implicit high-dim,"Kernel map -> very large effective capacity; bound via margin, not small VC"
+Random Forest (300 × depth 12),2457300.0,capacity proxy,Tree ensembles shatter easily; depth/ensemble size control overfitting
+"MLP (64->32, 3,649 weights)",43179.65855444778,upper bound O(W log W),Neural-net VC bounds are loose; regularisation matters
