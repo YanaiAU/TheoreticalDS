@@ -4,7 +4,7 @@ Predict whether a traffic accident is **serious** (fatal or severe injury) vs **
 
 **Real government data:** Israel CBS Public Use File, police-reported accidents with casualties, **2020–2024** (~49,941 rows).
 
-Source: [data.gov.il – PUF 2020–2024](https://data.gov.il/he/datasets/lamas/2023-puf) · [govil.ai overview](https://govil.ai/datasets/02789da8-7a3e-4bfc-b771-1732b1cf403c/)
+Source: [data.gov.il – PUF 2020–2024](https://data.gov.il/he/datasets/lamas/2023-puf/) · [govil.ai overview](https://govil.ai/datasets/02789da8-7a3e-4bfc-b771-1732b1cf403c/)
 
 **HistGradientBoosting wins.** Linear SVM is not the best model.
 
