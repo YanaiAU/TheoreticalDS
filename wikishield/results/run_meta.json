@@ -1,0 +1,8 @@
+{
+  "best_model": "linear_svm",
+  "n_train": 120000,
+  "n_test": 30000,
+  "n_features": 8009,
+  "split": "topic_held_out_20pct",
+  "positive_class": "AI (label=1)"
+}
