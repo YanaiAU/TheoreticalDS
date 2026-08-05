@@ -38,9 +38,9 @@ from sklearn.svm import LinearSVC
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 RESULTS = ROOT / "results"
-PICKLES = ROOT / "pickles"
+MODEL_FILES = ROOT / "model_files"
 RESULTS.mkdir(exist_ok=True)
-PICKLES.mkdir(exist_ok=True)
+MODEL_FILES.mkdir(exist_ok=True)
 
 CAT_FEATURES = [
     "SUG_DEREH", "THUM_GEOGRAFI", "HODESH_TEUNA", "SHAA", "SUG_YOM", "YOM_LAYLA",
@@ -98,12 +98,12 @@ def ord_pre(cat: list[str], num: list[str]) -> ColumnTransformer:
 
 
 def save_model(name: str, clf) -> Path:
-    """Write one artifact per model under pickles/."""
+    """Write one artifact per model under model_files/."""
     if isinstance(clf, CatBoostClassifier):
-        path = PICKLES / f"{name}.cbm"
+        path = MODEL_FILES / f"{name}.cbm"
         clf.save_model(str(path))
     else:
-        path = PICKLES / f"{name}.joblib"
+        path = MODEL_FILES / f"{name}.joblib"
         joblib.dump(clf, path, compress=3)
     print(f"  saved {path.name} ({path.stat().st_size} bytes)")
     return path
@@ -318,11 +318,11 @@ def main() -> None:
     (RESULTS / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     # Convenience copy of the best model under a stable name
     if best_name:
-        best_src = PICKLES / artifact_map[best_name]
+        best_src = MODEL_FILES / artifact_map[best_name]
         if best_src.suffix == ".cbm":
-            best_clf.save_model(str(PICKLES / "best_model.cbm"))
+            best_clf.save_model(str(MODEL_FILES / "best_model.cbm"))
         else:
-            joblib.dump(best_clf, PICKLES / "best_model.joblib")
+            joblib.dump(best_clf, MODEL_FILES / "best_model.joblib", compress=3)
     print(f"\nBest: {best_name} macro_f1={best_f1:.4f}")
     print("Artifacts:", ", ".join(artifact_map.values()))
 
