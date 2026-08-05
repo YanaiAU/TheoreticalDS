@@ -1,0 +1,15 @@
+{
+  "model": "qwen06_lora_finetune",
+  "family": "qwen_finetuned",
+  "accuracy": 0.5131698455949137,
+  "macro_f1": 0.5007790373213277,
+  "weighted_f1": 0.5097483437876085,
+  "latency_ms": 1.4699828134325799,
+  "eval_loss": 1.3880224227905273,
+  "eval_accuracy": 0.5131698455949137,
+  "eval_macro_f1": 0.5007915952411829,
+  "eval_runtime": 4.5766,
+  "eval_samples_per_second": 240.571,
+  "eval_steps_per_second": 7.648,
+  "epoch": 3.0
+}

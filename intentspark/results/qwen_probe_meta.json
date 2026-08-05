@@ -1,0 +1,6 @@
+{
+  "best": "qwen06_mlp_probe",
+  "embed_latency_ms": 2.212580504314299,
+  "model": "C:\\Users\\Yanai\\ArielProjects\\TheoreticalDS\\PythonProject\\TheoreticalDS\\intentspark\\models\\qwen3-0.6b",
+  "task": "sst5"
+}

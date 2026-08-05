@@ -1,0 +1,2 @@
+model,family,accuracy,macro_f1,weighted_f1,latency_ms
+qwen06_lora_finetune,qwen_finetuned,0.5131698455949137,0.5007790373213277,0.5097483437876085,1.4699828134325799
