@@ -1,0 +1,75 @@
+{
+  "task": "binary_serious_vs_light",
+  "story": [
+    "majority_baseline",
+    "naive_logreg",
+    "logistic_regression",
+    "linear_svm",
+    "random_forest",
+    "hist_gradient_boosting",
+    "catboost"
+  ],
+  "target": "HUMRAT_TEUNA<=2 \u2192 serious; else light",
+  "n_train": 39952,
+  "n_test": 9989,
+  "pos_rate": 0.25904567389519634,
+  "best_model": "catboost",
+  "best_macro_f1": 0.6940318838587616,
+  "model_artifacts": {
+    "majority_baseline": "majority_baseline.joblib",
+    "naive_logreg": "naive_logreg.joblib",
+    "logistic_regression": "logistic_regression.joblib",
+    "linear_svm": "linear_svm.joblib",
+    "random_forest": "random_forest.joblib",
+    "hist_gradient_boosting": "hist_gradient_boosting.joblib",
+    "catboost": "catboost.cbm"
+  },
+  "naive_features": [
+    "SUG_DEREH",
+    "SHAA",
+    "YOM_LAYLA",
+    "YOM_BASHAVUA",
+    "MAHOZ",
+    "SHNAT_TEUNA"
+  ],
+  "features_cat": [
+    "SUG_DEREH",
+    "THUM_GEOGRAFI",
+    "HODESH_TEUNA",
+    "SHAA",
+    "SUG_YOM",
+    "YOM_LAYLA",
+    "YOM_BASHAVUA",
+    "SUG_TEUNA",
+    "HAD_MASLUL",
+    "RAV_MASLUL",
+    "MEHIRUT_MUTERET",
+    "TKINUT",
+    "ROHAV",
+    "SIMUN_TIMRUR",
+    "TEURA",
+    "MEZEG_AVIR",
+    "PNE_KVISH",
+    "MAHOZ",
+    "NAFA",
+    "EZOR_TIVI",
+    "MAAMAD_MINIZIPALI",
+    "ZURAT_ISHUV",
+    "YEHIDA",
+    "STATUS_IGUN",
+    "SEMEL_YISHUV"
+  ],
+  "features_num": [
+    "SHNAT_TEUNA",
+    "X",
+    "Y"
+  ],
+  "source": "https://data.gov.il/he/datasets/lamas/2023-puf",
+  "cleaning": [
+    "Drop rows missing HUMRAT_TEUNA",
+    "Map severity 1/2 \u2192 serious, 3 \u2192 light",
+    "Categorical NA \u2192 __MISSING__",
+    "Numeric NA \u2192 median impute",
+    "Stratified 80/20 holdout (seed 42)"
+  ]
+}
