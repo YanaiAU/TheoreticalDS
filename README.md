@@ -153,11 +153,10 @@ Numbers are also in `results/model_comparison.csv`.
 
 ---
 
-## AI assistance (disclosure)
+## AI usage disclosure
 
 Development used an LLM coding assistant (Cursor) for locating the CBS API endpoints, drafting training/plotting scripts, repository cleanup, and README wording.
 
-What was **not** invented by the model: the dataset is real CBS open data; every metric and figure in this README was produced by executing `train_models.py` and `plot_results.py`. Feature choices, the staged model narrative, and the decision to prioritize serious-class metrics were reviewed by the student author.
 
 ---
 
