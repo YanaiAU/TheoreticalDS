@@ -1,8 +1,0 @@
-{
-  "best": "logistic_regression",
-  "n_train": 8544,
-  "n_test": 1101,
-  "n_classes": 5,
-  "task": "sst5_fine_grained_sentiment",
-  "split": "validation"
-}

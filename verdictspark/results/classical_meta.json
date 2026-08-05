@@ -1,7 +1,0 @@
-{
-  "best_classical": "logistic_regression",
-  "n_train": 2449,
-  "n_test": 817,
-  "majority_rate_train": 0.6508779093507554,
-  "selection": "balanced_accuracy"
-}
